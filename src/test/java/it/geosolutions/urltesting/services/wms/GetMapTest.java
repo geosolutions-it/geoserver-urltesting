@@ -6,9 +6,15 @@ import static it.geosolutions.urltesting.ImageAssert.assertPixelStructure;
 import static it.geosolutions.urltesting.ImageAssert.assertSize;
 import it.geosolutions.urltesting.HTTPRequestBuilder;
 import it.geosolutions.urltesting.HttpTest;
+import it.geosolutions.urltesting.filters.ImageDigestBuilder;
 
 import java.awt.Transparency;
 import java.awt.image.RenderedImage;
+import java.io.File;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+
+import javax.imageio.ImageIO;
 
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.junit.Test;
@@ -44,6 +50,76 @@ public class GetMapTest extends HttpTest
         assertColorModel(3, Transparency.TRANSLUCENT, true, image);
         assertFuzzyDigest("d3153443895e5ebdfa07f792711561c0bcf26d3b", image);
     }
+    
+    @Test
+    public void WMS_GetMap_MaskBand_External_No_Overview() throws Exception
+    {
+        GetMethod method =
+            getMap().kvp("layers", "cite:rastermask").kvp("styles", "").kvp("width",
+                    "512").kvp("height", "384").kvp("bbox",
+                "-90,25,-85,29").get();
+        assertHttpResponse(200, method, "image/png");
+
+        // turn into a rendered image
+        RenderedImage image = image(method);
+        assertSize(512, 384, image);
+        assertPixelStructure(4, 32, image);
+        assertColorModel(3, Transparency.TRANSLUCENT, true, image);
+        assertFuzzyDigest("df08b0c90657bb6503695486de003081f4114572", image);
+    }
+
+    @Test
+    public void WMS_GetMap_MaskBand_Internal_No_Overview() throws Exception
+    {
+        GetMethod method =
+            getMap().kvp("layers", "cite:rastermaskint").kvp("styles", "").kvp("width",
+                    "512").kvp("height", "384").kvp("bbox",
+                "-90,25,-85,29").get();
+        assertHttpResponse(200, method, "image/png");
+
+        // turn into a rendered image
+        RenderedImage image = image(method);
+        assertSize(512, 384, image);
+        assertPixelStructure(4, 32, image);
+        assertColorModel(3, Transparency.TRANSLUCENT, true, image);
+        assertFuzzyDigest("df08b0c90657bb6503695486de003081f4114572", image);
+    }
+    
+    
+    @Test
+    public void WMS_GetMap_GeoTiffMaskBand_Internal_Overview() throws Exception
+    {
+        GetMethod method =
+            getMap().kvp("layers", "it.geosolutions:world").kvp("styles", "").kvp("width",
+                    "660").kvp("height", "330").kvp("bbox",
+                "-714.0938373691333,-220.37737071764866,214.03116263086667,243.68512928235134").get();
+        assertHttpResponse(200, method, "image/png");
+
+        // turn into a rendered image
+        RenderedImage image = image(method);
+        assertSize(660, 330, image);
+        assertPixelStructure(1, 8, image);
+        assertColorModel(1, Transparency.OPAQUE, false, image);
+        assertFuzzyDigest("4bf25aef9c3664fa4a3a6dd7af65b72b505858ba", image);
+    }
+    
+    @Test
+    public void WMS_GetMap_GeoTiffMaskBand_External_Overview() throws Exception
+    {
+        GetMethod method =
+            getMap().kvp("layers", "cite:external").kvp("styles", "").kvp("width",
+                    "660").kvp("height", "330").kvp("bbox",
+                "-714.0938373691333,-220.37737071764866,214.03116263086667,243.68512928235134").get();
+        assertHttpResponse(200, method, "image/png");
+
+        // turn into a rendered image
+        RenderedImage image = image(method);
+        assertSize(660, 330, image);
+        assertPixelStructure(1, 8, image);
+        assertColorModel(1, Transparency.OPAQUE, false, image);
+        assertFuzzyDigest("4bf25aef9c3664fa4a3a6dd7af65b72b505858ba", image);
+    }
+
 /*
     // @Test
     public void testTranslucentPng8() throws Exception
@@ -214,4 +290,10 @@ public class GetMapTest extends HttpTest
         // assertPixelEquals(image, 150, 255, Color.RED);
         assertPixelEquals(image, 0, 120, Color.WHITE);
     }*/
+    
+    public static void printDigestFromPath(String path) throws IOException, NoSuchAlgorithmException{
+        RenderedImage image = ImageIO.read(new File(path));
+        String digest = new ImageDigestBuilder(image).getPixelFuzzyDigest();
+        System.out.println(digest);
+    }
 }
