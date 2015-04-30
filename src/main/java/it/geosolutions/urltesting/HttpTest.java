@@ -2,6 +2,7 @@ package it.geosolutions.urltesting;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import it.geosolutions.urltesting.filters.ImageDigestBuilder;
 import it.geosolutions.urltesting.security.UrlTestingSSLSocketFactory;
 
 import java.awt.image.RenderedImage;
@@ -16,6 +17,7 @@ import java.io.StringReader;
 import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -683,5 +685,9 @@ public class HttpTest
 
     }
 
-
+    public static void printDigestFromPath(String path) throws IOException, NoSuchAlgorithmException{
+        RenderedImage image = ImageIO.read(new File(path));
+        String digest = new ImageDigestBuilder(image).getPixelFuzzyDigest();
+        System.out.println(digest);
+    }
 }
